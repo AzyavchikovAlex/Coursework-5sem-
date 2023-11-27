@@ -2,11 +2,13 @@
 
 #include <vector>
 
+#include "Utils/Segment.h"
+
 template <typename T>
 class RetroactiveArray {
  public:
-  virtual void AssignAtTime(size_t l, size_t r, T value, size_t time) = 0;
+  virtual void AssignAtTime(const Segment& segment, T value, size_t time) = 0;
   virtual ~RetroactiveArray() = default;
-  virtual T GetCurrentSum(size_t l, size_t r) const = 0;
+  virtual T GetSum(const Segment& segment, size_t time) const = 0;
   [[nodiscard]] virtual size_t Size() const = 0;
 };

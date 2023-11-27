@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DataStructures/SimpleRetroactiveArray.h"
-#include "DataStructures/SimpleRetroactiveArray2.h"
 
 #include <random>
 #include <cassert>
@@ -37,8 +36,8 @@ template<typename T>
 void PerformOperation(
     const std::shared_ptr<RetroactiveArray<T>>& array,
     const Operation<T>& operation) {
-  array->AssignAtTime(operation.l,
-                      operation.r,
+  array->AssignAtTime({operation.l,
+                       operation.r},
                       operation.value,
                       operation.time);
 }

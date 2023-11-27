@@ -2,9 +2,8 @@
 #include <chrono>
 #include <iomanip>
 
-#include "Utils/random_utils.h"
+#include "Utils/RandomUtils.h"
 #include "DataStructures/RetroactiveArray.h"
-#include "DataStructures/SimpleRetroactiveArray2.h"
 
 class Timer {
  public:
@@ -36,8 +35,8 @@ double PerformInsertOperations(const std::shared_ptr<RetroactiveArray<T>>& array
   }
   Timer::Start();
   for (const random_utils::Operation<T>& operation : operations) {
-    array->AssignAtTime(operation.l,
-                        operation.r,
+    array->AssignAtTime({operation.l,
+                        operation.r},
                         operation.value,
                         operation.time);
   }
@@ -54,11 +53,11 @@ double PerformInsertAndSumOperations(const std::shared_ptr<RetroactiveArray<T>>&
   }
   Timer::Start();
   for (const random_utils::Operation<T>& operation : operations) {
-    array->AssignAtTime(operation.l,
-                        operation.r,
+    array->AssignAtTime({operation.l,
+                        operation.r},
                         operation.value,
                         operation.time);
-    auto value = array->GetCurrentSum(operation.l, operation.r);
+    auto value = array->GetSum({operation.l, operation.r}, std::numeric_limits<size_t>::max());
   }
   return Timer::Stop();
 }
@@ -80,14 +79,14 @@ void Measure(size_t size, size_t operations_count = 1000) {
 
 int main() {
   std::cout << "1000 operations test\n";
-  {
-    std::cout << "SimpleRetroactiveArray2 \n";
-    Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(100);
-    Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(1000);
-    Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(10000);
-    Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(100000);
-    Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(1000000);
-  }
+  // {
+  //   std::cout << "SimpleRetroactiveArray2 \n";
+  //   Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(100);
+  //   Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(1000);
+  //   Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(10000);
+  //   Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(100000);
+  //   Measure<SimpleRetroactiveArray2<int64_t>, int64_t>(1000000);
+  // }
   {
     std::cout << "SimpleRetroactiveArray \n";
     Measure<SimpleRetroactiveArray<int64_t>, int64_t>(100);

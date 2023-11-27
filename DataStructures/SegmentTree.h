@@ -1,7 +1,5 @@
 #pragma once
 
-#include "RetroactiveArray.h"
-
 #include <cassert>
 
 template<typename T>
@@ -122,42 +120,4 @@ class Tree {
     T modify{0};
     T sum{0};
   };
-};
-
-// Insert = O(n * log(n))
-// Get = O(log(n))
-
-template<typename T=int64_t>
-class SimpleRetroactiveArray2 : public RetroactiveArray<T> {
- public:
-  explicit SimpleRetroactiveArray2(const std::vector<T>& values)
-      : last_modification_time_(values.size(), 0), tree_(values) {
-  }
-  virtual ~SimpleRetroactiveArray2() = default;
-
-  virtual void AssignAtTime(size_t l, size_t r, T value, size_t time) {
-    for (size_t i = l; i < r; ++i) {
-      if (last_modification_time_[i] > time) {
-        continue;
-      }
-      last_modification_time_[i] = time;
-      tree_.Assign(i, i + 1, value);
-    }
-  }
-  virtual T GetCurrentSum(size_t l, size_t r) const {
-    return tree_.Sum(l, r);
-  }
-
-  [[nodiscard]] virtual size_t Size() const {
-    return last_modification_time_.size();
-  }
-
- private:
-  struct Operation {
-    size_t time;
-    size_t l, r;
-    T value;
-  };
-  std::vector<size_t> last_modification_time_{};
-  mutable Tree<T> tree_;
 };
