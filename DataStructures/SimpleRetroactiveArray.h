@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "RetroactiveArray.h"
 
 // Insert = O(n)
@@ -14,8 +16,8 @@ class SimpleRetroactiveArray : public RetroactiveArray<T> {
 
   virtual ~SimpleRetroactiveArray() = default;
 
-  virtual void AssignAtTime(const Segment& segment, T value, size_t time) {
-    if (segment.GetR() > init_values_.size()) {
+  void AssignAtTime(const Segment& segment, T value, size_t time) override {
+    if (segment.r > init_values_.size()) {
       throw std::runtime_error("Out of bound indexes");
     }
     Operation new_operation(segment, time, value);
@@ -28,25 +30,35 @@ class SimpleRetroactiveArray : public RetroactiveArray<T> {
       }
     }
   }
-  virtual T GetSum(const Segment& segment, size_t time) const {
+
+  void DeleteOperations(size_t time) override {
+    size_t insert_pos = 0;
+    for (size_t i = 0; i < operations_.size(); ++i) {
+      if (operations_[i].time != time) {
+        std::swap(operations_[i], operations_[insert_pos]);
+        ++insert_pos;
+      }
+    }
+    operations_.resize(insert_pos);
+  }
+  T GetSum(const Segment& segment, size_t time) const override {
     std::vector<T> new_values = init_values_;
     for (const Operation& operation : operations_) {
       if (operation.time > time) {
         break;
       }
-      for (size_t i = operation.segment.GetL(); i < operation.segment.GetR();
-           ++i) {
+      for (size_t i = operation.segment.l; i < operation.segment.r; ++i) {
         new_values[i] = operation.value;
       }
     }
     T sum = 0;
-    for (size_t i = segment.GetL(); i < segment.GetR(); ++i) {
+    for (size_t i = segment.l; i < segment.r; ++i) {
       sum += new_values[i];
     }
     return sum;
   }
 
-  [[nodiscard]] virtual size_t Size() const {
+  [[nodiscard]] size_t Size() const override {
     return init_values_.size();
   }
 

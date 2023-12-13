@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <exception>
 #include "Utils/Segment.h"
 
 template<typename T>
@@ -15,11 +16,20 @@ class PersistentSegmentTree {
     tree_size_ = ProperSize(values.size());
     root_ = BuildTree(values, {0, tree_size_});
   }
+  PersistentSegmentTree(std::shared_ptr<const Node>&& root, size_t size)
+      : tree_size_(
+      size), root_(std::move(root)) {
+
+  }
   ~PersistentSegmentTree() = default;
 
-  [[nodiscard]] PersistentSegmentTree Assign(const Segment& segment,
-                                             T value) const {
-    return {Assign(segment, value, root_, {0, tree_size_}), tree_size_};
+  std::shared_ptr<PersistentSegmentTree<T>> Assign(const Segment& segment,
+                                                   T value) const {
+    return std::make_shared<PersistentSegmentTree<T>>(Assign2(segment,
+                                                             value,
+                                                             root_,
+                                                             {0, tree_size_}),
+                                                      tree_size_);
   }
 
   [[nodiscard]] T Sum(const Segment& segment) const {
@@ -31,11 +41,6 @@ class PersistentSegmentTree {
   }
 
  private:
-  PersistentSegmentTree(std::shared_ptr<const Node>&& root, size_t size)
-      : tree_size_(
-      size), root_(std::move(root)) {
-
-  }
   static size_t ProperSize(size_t size) {
     size_t proper_size = 1;
     while (proper_size < size) {
@@ -44,76 +49,65 @@ class PersistentSegmentTree {
     return proper_size;
   }
 
-  static std::shared_ptr<const Node> Propagate(const std::shared_ptr<const Node>& node,
-                                               const Segment& segment) {
-    assert(node != nullptr);
-    if (!node->has_operation) {
-      return node;
-    }
-    if (segment.GetR() - segment.GetL() == 1) {
-      return std::make_shared<const Node>(false, 0, node->modify, nullptr,
-                                          nullptr);
-    }
-    size_t mid = segment.GetMid();
-    auto left_son = std::make_shared<const Node>(true,
-                                                 node->modify,
-                                                 node->modify
-                                                     * static_cast<T>(
-                                                         mid - segment.GetL()),
-                                                 node->left_son->left_son,
-                                                 node->left_son->right_son);
-    auto right_son = std::make_shared<const Node>(true,
-                                                  node->modify,
-                                                  node->modify
-                                                      * static_cast<T>(
-                                                          segment.GetR() - mid),
-                                                  node->right_son->left_son,
-                                                  node->right_son->right_son);
-    return std::make_shared<const Node>(false,
-                                        0,
-                                        left_son->sum + right_son->sum,
-                                        left_son,
-                                        right_son);
+  static std::shared_ptr<const Node> SetValue(const std::shared_ptr<const Node>& node, Segment
+   segment, T value) {
+    return std::make_shared<const Node>(segment.Size() > 1,
+                                        value,
+                                        segment.Size() * value,
+                                        node->left_son,
+                                        node->right_son);
   }
 
-  static std::shared_ptr<const Node> Assign(const Segment& searching_segment,
-                                            T value,
-                                            const std::shared_ptr<const Node>& node,
-                                            const Segment& segment) {
-    assert(node != nullptr);
-    assert(searching_segment.GetL() >= segment.GetL()
-               && searching_segment.GetR() <= segment.GetR());
-    if (searching_segment == segment) {
-      return std::make_shared<const Node>(true,
-                                          value,
-                                          value * (segment.GetR()
-                                              - segment.GetL()),
-                                          node->left_son,
-                                          node->right_son);
+  static std::shared_ptr<const Node> Assign2(const Segment& searching_segment,
+                      T value,
+                      const std::shared_ptr<const Node>& node,
+                      const Segment& segment,
+                      std::optional<T> propagation_value = std::nullopt) {
+    if (node == nullptr || !(searching_segment.l >= segment.l && searching_segment.r <= segment.r)) {
+      throw std::runtime_error("Bad data");
     }
-    auto new_node = Propagate(node, segment);
-    auto new_left_son = new_node->left_son;
-    auto new_right_son = new_node->right_son;
+    if (searching_segment == segment) {
+      return std::make_shared<Node>(segment.Size() > 1,
+                                    value,
+                                    value * segment.Size(),
+                                    node->left_son,
+                                    node->right_son);
+    }
+    if (node->has_operation && !propagation_value.has_value()) {
+      propagation_value = node->modify;
+    }
+    auto new_left_son = node->left_son;
+    auto new_right_son = node->right_son;
     size_t m = segment.GetMid();
-    if (searching_segment.GetR() <= m) {
-      new_left_son = Assign(searching_segment,
+    if (searching_segment.r <= m) {
+      new_left_son = Assign2(searching_segment,
                             value,
-                            new_node->left_son,
-                            {segment.GetL(), m});
-    } else if (searching_segment.GetL() >= m) {
-      new_right_son = Assign(searching_segment,
+                            node->left_son,
+                            {segment.l, m},
+                            propagation_value);
+      if (propagation_value.has_value()) {
+        new_right_son = SetValue(new_right_son, {m, segment.r}, propagation_value.value());
+      }
+    } else if (searching_segment.l >= m) {
+      new_right_son = Assign2(searching_segment,
                              value,
-                             new_node->right_son,
-                             {m, segment.GetR()});
+                             node->right_son,
+                             {m, segment.r},
+                             propagation_value);
+      if (propagation_value.has_value()) {
+        new_left_son = SetValue(new_left_son, {segment.l, m}, propagation_value.value());
+      }
     } else {
-      new_left_son = Assign({searching_segment.GetL(), m},
+      new_left_son = Assign2({searching_segment.l, m},
                             value,
-                            new_node->left_son,
-                            {segment.GetL(), m});
-      new_right_son = Assign({m, searching_segment.GetR()},
+                            node->left_son,
+                            {segment.l, m},
+                            propagation_value);
+      new_right_son = Assign2({m, searching_segment.r},
                              value,
-                             new_node->right_son,
-                             {m, segment.GetR()});
+                             node->right_son,
+                             {m, segment.r},
+                             propagation_value);
     }
     return std::make_shared<const Node>(0,
                                         0,
@@ -125,43 +119,46 @@ class PersistentSegmentTree {
   static T Sum(const Segment& searching_segment,
                const std::shared_ptr<const Node>& node,
                const Segment& segment) {
-    assert(node != nullptr);
-    assert(searching_segment.GetL() >= segment.GetL()
-               && searching_segment.GetR() <= segment.GetR());
+
+    if (node == nullptr || !(searching_segment.l >= segment.l && searching_segment.r <= segment.r)) {
+      throw std::runtime_error("Bad data");
+    }
+    // assert(node != nullptr);
+    // assert(searching_segment.GetL() >= segment.GetL()
+    //            && searching_segment.GetR() <= segment.GetR());
     if (node->has_operation) {
-      return node->modify * static_cast<T >(searching_segment.GetR()
-          - searching_segment.GetL());
+      return node->modify * static_cast<T >(searching_segment.Size());
     }
     if (searching_segment == segment) {
       return node->sum;
     }
     size_t mid = segment.GetMid();
-    if (searching_segment.GetR() <= mid) {
-      return Sum(searching_segment, node->left_son, {segment.GetL(), mid});
+    if (searching_segment.r <= mid) {
+      return Sum(searching_segment, node->left_son, {segment.l, mid});
     }
-    if (searching_segment.GetL() >= mid) {
-      return Sum(searching_segment, node->right_son, {mid, segment.GetR()});
+    if (searching_segment.l >= mid) {
+      return Sum(searching_segment, node->right_son, {mid, segment.r});
     }
-    return Sum({searching_segment.GetL(), mid},
+    return Sum({searching_segment.l, mid},
                node->left_son,
-               {segment.GetL(), mid})
-        + Sum({mid, searching_segment.GetR()},
+               {segment.l, mid})
+        + Sum({mid, searching_segment.r},
               node->right_son,
-              {mid, segment.GetR()});
+              {mid, segment.r});
   }
 
   static std::shared_ptr<const Node> BuildTree(const std::vector<T>& values,
                                                const Segment& segment) {
-    if (segment.GetR() - segment.GetL() == 1) {
-      if (segment.GetL() < values.size()) {
-        return std::make_shared<const Node>(false, 0, values[segment.GetL()],
+    if (segment.Size() == 1) {
+      if (segment.l < values.size()) {
+        return std::make_shared<const Node>(false, 0, values[segment.l],
                                             nullptr, nullptr);
       }
       return std::make_shared<const Node>(false, 0, 0, nullptr, nullptr);
     }
-    size_t mid = (segment.GetR() + segment.GetL()) / 2;
-    auto left_son = BuildTree(values, {segment.GetL(), mid});
-    auto right_son = BuildTree(values, {mid, segment.GetR()});
+    size_t mid = segment.GetMid();
+    auto left_son = BuildTree(values, {segment.l, mid});
+    auto right_son = BuildTree(values, {mid, segment.r});
     return std::make_shared<const Node>(false,
                                         0,
                                         left_son->sum + right_son->sum,

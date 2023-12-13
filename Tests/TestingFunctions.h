@@ -3,10 +3,12 @@
 #include <gtest/gtest.h>
 
 #include "DataStructures/SimpleRetroactiveArray.h"
+#include "Utils/RandomUtils.h"
 
 #include <random>
 #include <cassert>
 #include <memory>
+#include <thread>
 #include <limits>
 
 namespace testing_functions {
@@ -26,14 +28,22 @@ void CompareArrays(const std::shared_ptr<RetroactiveArray<T>>& array,
 
 template<typename T>
 void CompareArrays(const std::shared_ptr<RetroactiveArray<T>>& actual_array,
-                   const std::shared_ptr<RetroactiveArray<T>>& expected_array) {
+                   const std::shared_ptr<RetroactiveArray<T>>& expected_array,
+                   size_t max_time = std::numeric_limits<size_t>::max()) {
   ASSERT_EQ(actual_array->Size(), expected_array->Size());
   for (size_t l = 0; l < expected_array->Size(); ++l) {
     for (size_t r = l + 1; r <= expected_array->Size(); ++r) {
-      ASSERT_EQ(actual_array->GetSum({l, r},
-                                     std::numeric_limits<size_t>::max()),
-                expected_array->GetSum({l, r},
-                                       std::numeric_limits<size_t>::max()));
+      size_t time = random_utils::GetRandomTime(max_time);
+      if (actual_array->GetSum({l, r}, time)
+          != expected_array->GetSum({l, r}, time)) {
+        std::cerr << l << " " << r <<  " " << time << "\n";
+        std::cerr << actual_array->GetSum({l, r}, time) << "\t" << expected_array->GetSum({l, r}, time) << "\n";
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1000ms);
+        std::abort();
+      }
+      ASSERT_EQ(actual_array->GetSum({l, r}, time),
+                expected_array->GetSum({l, r}, time));
     }
   }
 }

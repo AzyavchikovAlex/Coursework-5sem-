@@ -2,35 +2,37 @@
 
 #include <cassert>
 
-class Segment {
- public:
-  Segment() = delete;
-  Segment(size_t l, size_t r) : l_(l), r_(r) {
-    assert(l < r);
+struct Segment {
+  Segment() = default;
+  Segment(size_t l_value, size_t r_value) : l(l_value), r(r_value) {
+    if (l_value >= r_value) {
+      throw std::runtime_error("l >= r");
+    }
   }
 
   bool operator==(const Segment& segment) const {
-    assert(!IsEmpty());
-    return l_ == segment.l_ && r_ == segment.r_;
+    if (IsEmpty()) {
+      throw std::runtime_error("Empty");
+    }
+    return l == segment.l && r == segment.r;
   }
 
   [[nodiscard]] size_t Size() const {
-    return r_ - l_;
+    return r - l;
   }
   [[nodiscard]] bool IsEmpty() const {
-    return l_ == r_;
+    return l == r;
   }
 
-  [[nodiscard]] size_t GetL() const {
-    return l_;
-  }
-  [[nodiscard]] size_t GetR() const {
-    return r_;
-  }
+  // [[nodiscard]] size_t GetL() const {
+  //   return l_;
+  // }
+  // [[nodiscard]] size_t GetR() const {
+  //   return r_;
+  // }
   [[nodiscard]] size_t GetMid() const {
-    return (r_ + l_) / 2;
+    return (r + l) >> 1;
   }
 
- private:
-  size_t l_, r_;
+  size_t l, r;
 };

@@ -34,6 +34,32 @@ TEST(SimpleRetroactiveArray, Test2) {
   testing_functions::CompareArrays(array, {1, 1, 1, 1});
 }
 
+
+TEST(SimpleRetroactiveArray, DeleteOperationsTest) {
+  std::vector<int64_t> numbers = {1, 2, 3, 4};
+  std::shared_ptr<RetroactiveArray<int64_t>> array = std::make_shared<SimpleRetroactiveArray<>>(numbers);
+  testing_functions::CompareArrays(array, {1, 2, 3, 4});
+
+  array->AssignAtTime({1, 3}, 2, 3);
+  testing_functions::CompareArrays(array, {1, 2, 2, 4});
+
+  array->AssignAtTime({2, 4}, 5, 2);
+  testing_functions::CompareArrays(array, {1, 2, 2, 5});
+
+  array->AssignAtTime({0, 4}, 0, 1);
+  testing_functions::CompareArrays(array, {0, 2, 2, 5});
+
+  array->AssignAtTime({0, 4}, 1, 4);
+  testing_functions::CompareArrays(array, {1, 1, 1, 1});
+
+  array->DeleteOperations(3);
+  testing_functions::CompareArrays(array, {1, 1, 1, 1});
+
+  array->DeleteOperations(4);
+  array->DeleteOperations(1);
+  testing_functions::CompareArrays(array, {1, 2, 5, 5});
+}
+
 TEST(SimpleRetroactiveArray, Throw) {
   std::vector<int64_t> numbers = {0};
   std::shared_ptr<RetroactiveArray<int64_t>> array = std::make_shared<SimpleRetroactiveArray<>>(numbers);
