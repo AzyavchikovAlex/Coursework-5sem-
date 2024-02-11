@@ -24,12 +24,6 @@ struct Segment {
     return l == r;
   }
 
-  // [[nodiscard]] size_t GetL() const {
-  //   return l_;
-  // }
-  // [[nodiscard]] size_t GetR() const {
-  //   return r_;
-  // }
   [[nodiscard]] size_t GetMid() const {
     return (r + l) >> 1;
   }

@@ -8,6 +8,7 @@
 #include "Utils/RandomUtils.h"
 #include "DataStructures/RetroactiveArray.h"
 #include "DataStructures/RetroactiveArray1_0.h"
+#include "DataStructures/RetroactiveArray2_0.h"
 #include "DataStructures/SegmentTree.h"
 
 template<typename T>
@@ -69,7 +70,7 @@ random_utils::Metrics MeasureSumOperations(
     const std::shared_ptr<RetroactiveArray<T>>& array,
     size_t q) {
   assert(q > 0);
-  size_t operations_count = 1000;
+  size_t operations_count = 100;
   random_utils::Metrics metrics;
 
   std::vector<random_utils::Operation<T>> operations;
@@ -105,8 +106,6 @@ void MeasureOperation(const std::vector<size_t>& n_values,
                       const std::vector<size_t>& q_values,
                       auto measuring_function,
                       std::ostream& stream) {
-  size_t operations_count = 50;
-
   stream << std::setw(10) << std::setprecision(7)
          << "N\\Q";
   stream << std::setw(3) << " ";
@@ -134,24 +133,48 @@ void MeasureOperation(const std::vector<size_t>& n_values,
 }
 
 int main() {
-  std::vector<size_t> ns = {1000, 10'000, 100'000};
-  std::vector<size_t> qs = {100, 200, 400, 800};
-  // MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>(ns,
-  //                                                         qs,
-  //                                                         MeasureInsertOperations<
-  //                                                             int64_t>,
-  //                                                         std::cout);
-  //
-  // MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>(ns,
-  //                                                         qs,
-  //                                                         MeasureDeleteOperations<
-  //                                                             int64_t>,
-  //                                                         std::cout);
-  MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>({10'000, 100'000, 1'000'000},
-                                                          {1000, 10'000, 100'000},
-                                                          MeasureSumOperations<
-                                                              int64_t>,
-                                                          std::cout);
+  {
+    // std::vector<size_t> ns = {10'000};
+    // std::vector<size_t> qs = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000};
+    // MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>(ns,
+    //                                                         qs,
+    //                                                         MeasureInsertOperations<
+    //                                                             int64_t>,
+    //                                                         std::cout);
+    //
+    // MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>(ns,
+    //                                                         qs,
+    //                                                         MeasureDeleteOperations<
+    //                                                             int64_t>,
+    //                                                         std::cout);
+    // MeasureOperation<RetroactiveArray1_0<int64_t>, int64_t>({10'000, 50'000,
+    //                                                          100'000, 500'000,
+    //                                                          1'000'000},
+    //                                                         {1000, 5000, 10'000,
+    //                                                          50'000, 100'000},
+    //                                                         MeasureSumOperations<
+    //                                                             int64_t>,
+    //                                                         std::cout);
+  }
+  {
+    std::vector<size_t> ns = {4000};
+    std::vector<size_t> qs = {1000, 5'000, 10'000, 50'000};
+    // MeasureOperation<RetroactiveArray2_0<int64_t>, int64_t>(ns,
+    //                                                         qs,
+    //                                                         MeasureInsertOperations<
+    //                                                             int64_t>,
+    //                                                         std::cerr);
 
+    // MeasureOperation<RetroactiveArray2_0<int64_t>, int64_t>(ns,
+    //                                                         qs,
+    //                                                         MeasureDeleteOperations<
+    //                                                             int64_t>,
+    //                                                         std::cerr);
+    MeasureOperation<RetroactiveArray2_0<int64_t>, int64_t>(ns,
+                                                            qs,
+                                                            MeasureSumOperations<
+                                                                int64_t>,
+                                                            std::cerr);
+  }
   return 0;
 }

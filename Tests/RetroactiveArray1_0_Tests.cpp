@@ -53,7 +53,7 @@ TEST(PersistentSegmentTree, Random) {
 }
 
 TEST(RetroactiveArray1_0, Random) {
-  size_t size = 30;
+  size_t size = 50;
   std::vector<int64_t> numbers(size, 0);
   std::shared_ptr<RetroactiveArray<int64_t>>
       expected_array = std::make_shared<SimpleRetroactiveArray<>>(numbers);

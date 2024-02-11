@@ -10,9 +10,8 @@
 template<typename T=int64_t>
 class SimpleRetroactiveArray : public RetroactiveArray<T> {
  public:
-  explicit SimpleRetroactiveArray(const std::vector<T>& values) : init_values_(
-      values) {
-  }
+  explicit SimpleRetroactiveArray(const std::vector<T>& values)
+      : init_values_(values) {}
 
   virtual ~SimpleRetroactiveArray() = default;
 
@@ -20,14 +19,10 @@ class SimpleRetroactiveArray : public RetroactiveArray<T> {
     if (segment.r > init_values_.size()) {
       throw std::runtime_error("Out of bound indexes");
     }
-    Operation new_operation(segment, time, value);
-    operations_.push_back(new_operation);
+    operations_.push_back({segment, time, value});
     for (size_t i = operations_.size() - 1; i > 0; --i) {
-      if (operations_[i - 1].time > operations_[i].time) {
-        std::swap(operations_[i], operations_[i - 1]);
-      } else {
-        break;
-      }
+      if (operations_[i - 1].time <= operations_[i].time) break;
+      std::swap(operations_[i], operations_[i - 1]);
     }
   }
 
@@ -35,8 +30,7 @@ class SimpleRetroactiveArray : public RetroactiveArray<T> {
     size_t insert_pos = 0;
     for (size_t i = 0; i < operations_.size(); ++i) {
       if (operations_[i].time != time) {
-        std::swap(operations_[i], operations_[insert_pos]);
-        ++insert_pos;
+        std::swap(operations_[i], operations_[insert_pos++]);
       }
     }
     operations_.resize(insert_pos);
@@ -44,9 +38,7 @@ class SimpleRetroactiveArray : public RetroactiveArray<T> {
   T GetSum(const Segment& segment, size_t time) const override {
     std::vector<T> new_values = init_values_;
     for (const Operation& operation : operations_) {
-      if (operation.time > time) {
-        break;
-      }
+      if (operation.time > time) break;
       for (size_t i = operation.segment.l; i < operation.segment.r; ++i) {
         new_values[i] = operation.value;
       }
